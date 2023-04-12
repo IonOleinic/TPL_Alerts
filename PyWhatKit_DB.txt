@@ -1,0 +1,80 @@
+Date: 11/4/2023
+Time: 14:8
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Situatie Stocuri Bancnote:Banca 401
+--------------------
+Date: 11/4/2023
+Time: 15:10
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Situatie Stocuri Bancnote:Banca 442Catedrala 411Universitate 422
+--------------------
+Date: 11/4/2023
+Time: 15:29
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Situatie Stocuri Bancnote:Banca 444Catedrala 414Universitate 437
+--------------------
+Date: 11/4/2023
+Time: 16:30
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Situatie Stocuri Bancnote:Banca 465
+--------------------
+Date: 11/4/2023
+Time: 18:32
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Skayo TVM AlertCatedrala11.04.2023 18:34:52Defect hardware
+--------------------
+Date: 11/4/2023
+Time: 19:52
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Skayo TVM AlertOrizont11.04.2023 19:54:31Defect hardware
+--------------------
+Date: 11/4/2023
+Time: 20:34
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Situatie Stocuri Bancnote:Orizont 403
+--------------------
+Date: 11/4/2023
+Time: 21:35
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Situatie Stocuri Bancnote:Orizont 409
+--------------------
+Date: 12/4/2023
+Time: 2:6
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Skayo TVM AlertMoldova12.04.2023 02:05:33Defect hardware
+--------------------
+Date: 12/4/2023
+Time: 3:9
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Skayo TVM AlertMoldova12.04.2023 02:05:33Defect hardware
+--------------------
+Date: 12/4/2023
+Time: 7:44
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Centru 401
+--------------------
+Date: 12/4/2023
+Time: 8:3
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Centru 404
+--------------------
+Date: 12/4/2023
+Time: 8:12
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Centru 417Gara Burdujeni 401
+--------------------
+Date: 12/4/2023
+Time: 8:32
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Alimentara Obcini 405Centru 429Gara Burdujeni 413
+--------------------
+Date: 12/4/2023
+Time: 8:35
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Centru 430Gara Burdujeni 414
+--------------------
+Date: 12/4/2023
+Time: 9:0
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Skayo TVM AlertCinema Burdujeni12.04.2023 09:00:49Defect hardware
+--------------------
