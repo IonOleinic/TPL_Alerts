@@ -78,3 +78,8 @@ Time: 9:0
 Group ID: HR4sPdnEGnI1vNGGehBmr4
 Message: TPL Suceava Skayo TVM AlertCinema Burdujeni12.04.2023 09:00:49Defect hardware
 --------------------
+Date: 12/4/2023
+Time: 10:30
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: (TEST)Lipsa conexiune Switch Str. Lev Tolstoi2023-04-12 10:30:10
+--------------------

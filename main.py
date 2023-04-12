@@ -13,7 +13,6 @@ from pathlib import Path
 from selenium import webdriver
 import PyPDF2
 
-
 downloads_path = str(Path.home() / "Downloads")
 group_id='HR4sPdnEGnI1vNGGehBmr4'
 session=requests.session()
