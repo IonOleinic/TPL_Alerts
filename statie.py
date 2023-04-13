@@ -1,11 +1,9 @@
 import os
 import time
-from pythonping import ping
-import platform    # For getting the operating system name
-import subprocess  # For executing a shell command
 from threading import Thread
 import pywhatkit
 from datetime import datetime
+from whatsapp import send_whatsapp_msg
 
 class Statie():
     def __init__(self,denumire,ip_panou,ip_tvm,ip_camera,ip_switch) -> None:
@@ -18,7 +16,7 @@ class Statie():
     def check_ip_station(self,ip,ip_source_text,whatsap_group_id,wait_time):
         while(True):
             self.check_ip(ip,ip_source_text,whatsap_group_id)
-            print(f"Next ping for {ip_source_text} {self.denumire} will be after {wait_time} sec...")
+            # print(f"Next ping for {ip_source_text} {self.denumire} will be after {wait_time} sec...")
             time.sleep(wait_time)
         
 
@@ -32,14 +30,13 @@ class Statie():
     def check_ip(self,ip,ip_source_text,whatsap_group_id)-> None:
         if(ip!='None'):
             response = os.popen(f"ping -n 4 {ip}").read()
-            if "Received = 3" in response or "Received = 4" in response or "Received = 2" in response:
-                # print(f"UP IP {ip_source_text} {self.denumire} Ping Successful, Host is UP!")
-                pass
-            else:
+            if "Received = 0" in response :
                 data=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                pywhatkit.sendwhatmsg_to_group_instantly(whatsap_group_id,f"(TEST)\nLipsa conexiune {ip_source_text} {self.denumire}\n{data}")
+                # pywhatkit.sendwhatmsg_to_group_instantly(whatsap_group_id,f"(TEST)\nLipsa conexiune {ip_source_text} {self.denumire}\n{data}")
+                send_whatsapp_msg("Echipa racheta",f"(TEST)\nLipsa conexiune {ip_source_text} {self.denumire}\n{data}")
                 print(f"(TEST)\nLipsa conexiune {ip_source_text} {self.denumire}\n{data}")
                 print(f"Trimis mesaj alerta ip catre Whatsap\n")
+                
     
     def __str__(self):
         return self.denumire+" "+self.ip_panou+" "+self.ip_tvm+" "+self.ip_camera+" "+self.ip_switch

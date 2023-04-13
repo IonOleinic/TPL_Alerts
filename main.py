@@ -12,15 +12,17 @@ from datetime import datetime
 from pathlib import Path
 from selenium import webdriver
 import PyPDF2
+from whatsapp import send_whatsapp_msg
 
+default_browser_exe='msedge.exe'
 downloads_path = str(Path.home() / "Downloads")
-group_id='HR4sPdnEGnI1vNGGehBmr4'
+whatsapp_group_id='HR4sPdnEGnI1vNGGehBmr4'
 session=requests.session()
 
 def pkill (process_name):
       try:
          killed = os.system('taskkill /f /im ' + process_name).read()
-      except Exception:
+      except Exception as e:
          killed = 0
       return killed
 
@@ -41,9 +43,8 @@ def check_ips():
          station=Statie(cell_denumire,cell_panou,cell_tvm,cell_camera,cell_switch)
          stations_list.append(station)
    for i in range(len(stations_list)):
-      stations_list[i].check_station(group_id)
+      stations_list[i].check_station(whatsapp_group_id)
    
-
 def check_alerts():
    def get_login_credentials():
       res=session.get("http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx")
@@ -84,8 +85,10 @@ def check_alerts():
          else:
             print('\n\x1b[1;36;43m' + f'A expirat timpul pentru alerta {alert_list[i].nume} {alert_list[i].data}' + '\x1b[0m\n')
       return result_list
-
+   
    get_login_credentials()
+   # send_whatsapp_msg("+373 671 06 737","Hello\nworld")
+   # print('\x1b[1;31;40m' + 'Start' + '\x1b[0m')
    alert_list_already_send=[]
    rata_refresh=25
    wait_time=30*60
@@ -119,17 +122,18 @@ def check_alerts():
                      else:
                         alert_ttl=default_alert_ttl
                      new_alert=Alerta(alert_id,nume_TVM,data_alerta,tip_alerta,alert_ttl)
-                     pywhatkit.sendwhatmsg_to_group_instantly(group_id,f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}\n{tip_alerta}")
+                     # pywhatkit.sendwhatmsg_to_group_instantly(whatsapp_group_id,f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}\n{tip_alerta}")
+                     send_whatsapp_msg("Echipa racheta",f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}\n{tip_alerta}")
                      print(f"Trimis mesaj alerta de la {new_alert.nume} catre Whatsap\n")
                      alert_list_already_send.append(new_alert)
                      sended_messages+=1
                   else:
-                     print('\x1b[1;36;43m' + 'Mesaj deja trimis pe Whatsap' + '\x1b[0m\n')
+                     print('\x1b[1;33;40m' + 'Mesaj deja trimis pe Whatsap' + '\x1b[0m\n')
             if(alert_finded==False):
                print("Nimic gasit.")
                if(sended_messages>2):
                   sended_messages=0
-                  pkill('msedge.exe')
+                  pkill(default_browser_exe)
             alert_list_already_send=delete_expired_alerts(alert_list_already_send)
          else:
             print("Eroare logare.Se incearca din nou...")
@@ -184,7 +188,7 @@ def check_stocks():
            print("Nu sunt TVM-uri de colectat.")
            if(sended_messages>2):
                sended_messages=0
-               pkill('msedge.exe')
+               pkill(default_browser_exe)
         else:
             now=datetime.now()
             if(now.hour>5 and now.hour<22):    
@@ -193,7 +197,8 @@ def check_stocks():
                      whatsapp_text+=stoc.nume_TVM+" "+str(stoc.nr_bancnote)+"\n"
                print("TVM-uri de colectat:")
                print(whatsapp_text)
-               pywhatkit.sendwhatmsg_to_group_instantly(group_id,f"TPL Suceava Stocuri Bancnote:\n{whatsapp_text}")
+               # pywhatkit.sendwhatmsg_to_group_instantly(whatsapp_group_id,f"TPL Suceava Stocuri Bancnote:\n{whatsapp_text}")
+               send_whatsapp_msg("Echipa racheta",f"TPL Suceava Stocuri Bancnote:\n{whatsapp_text}")
                print(f"Trimis mesaj situatie stocuri catre Whatsap\n")
             else:
                print(f"Este ora {now.hour}, e tarziu deja...Nu mai trimitem mesaj pe whatsapp...")
@@ -201,8 +206,11 @@ def check_stocks():
          print("PDF File Not Found.")
 
   def download_pdf_stocuri():
-      try:
-         driver = webdriver.Firefox()
+      def download():
+         opts=webdriver.FirefoxOptions()
+         opts.add_argument("--headless")
+         opts.add_argument("--disable-gpu")
+         driver = webdriver.Firefox(options=opts)
          time.sleep(1)
          driver.get("http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx")
          username_field = driver.find_element('name','ctl03$txtUserName')
@@ -224,10 +232,13 @@ def check_stocks():
          btn_export_pdf.click()
          time.sleep(10)
          driver.quit()
+      try:
+         download()
       except OSError as e:
          print("Failed with:", e.strerror)
          print("Error code:", e.code) 
-         driver.quit()
+         time.sleep(10)
+         download()
 
   def find_pdf(partial_name):
      full_list = os.listdir(downloads_path)
@@ -257,7 +268,7 @@ def check_stocks():
         print("Error code:", e.code) 
    else:
      print("[DELETE] The file does not exist")
-     
+  
   refresh_stocuri=3600
   sended_messages=0
   while(True):
@@ -271,14 +282,12 @@ def check_stocks():
       print()
    except OSError as e:
       print("Failed with:", e.strerror)
-      print("Error code:", e.code) 
+      print("Error code:", e.code)
    time.sleep(refresh_stocuri)
    
-
 def main():
-   
-   Thread(target=check_ips).start()
    Thread(target=check_alerts).start()
-   # Thread(target=check_stocks).start()
+   Thread(target=check_stocks).start()
+   Thread(target=check_ips).start()
 
 main()    

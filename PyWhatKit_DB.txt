@@ -83,3 +83,103 @@ Time: 10:30
 Group ID: HR4sPdnEGnI1vNGGehBmr4
 Message: (TEST)Lipsa conexiune Switch Str. Lev Tolstoi2023-04-12 10:30:10
 --------------------
+Date: 12/4/2023
+Time: 10:47
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Curcubeu 417
+--------------------
+Date: 12/4/2023
+Time: 10:50
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Curcubeu 426
+--------------------
+Date: 12/4/2023
+Time: 12:8
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: (TEST)Lipsa conexiune TVM Curcubeu2023-04-12 12:08:24
+--------------------
+Date: 12/4/2023
+Time: 13:20
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Orizont 418
+--------------------
+Date: 12/4/2023
+Time: 13:27
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Orizont 425
+--------------------
+Date: 12/4/2023
+Time: 13:28
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Skayo TVM AlertMobila12.04.2023 13:28:55Defect hardware
+--------------------
+Date: 12/4/2023
+Time: 13:29
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Orizont 426
+--------------------
+Date: 12/4/2023
+Time: 14:35
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: (TEST)Lipsa conexiune Panou Curcubeu2023-04-12 14:35:17
+--------------------
+Date: 12/4/2023
+Time: 15:29
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Centru 401
+--------------------
+Date: 12/4/2023
+Time: 15:32
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Centru 402
+--------------------
+Date: 12/4/2023
+Time: 15:35
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Centru 404
+--------------------
+Date: 12/4/2023
+Time: 15:44
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: (TEST)Lipsa conexiune TVM Curcubeu2023-04-12 15:44:41
+--------------------
+Date: 12/4/2023
+Time: 17:29
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Skayo TVM AlertCentru12.04.2023 17:29:19Defect hardware
+--------------------
+Date: 12/4/2023
+Time: 19:28
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Skayo TVM AlertPoliclinica 212.04.2023 19:28:19Defect hardware
+--------------------
+Date: 12/4/2023
+Time: 20:40
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: Test
+--------------------
+Date: 12/4/2023
+Time: 20:41
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: Test
+--------------------
+Date: 12/4/2023
+Time: 20:41
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: Test
+--------------------
+Date: 13/4/2023
+Time: 7:28
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Skayo TVM AlertGara Burdujeni13.04.2023 07:29:05Defect hardware
+--------------------
+Date: 13/4/2023
+Time: 7:37
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Banca 422
+--------------------
+Date: 13/4/2023
+Time: 7:55
+Group ID: HR4sPdnEGnI1vNGGehBmr4
+Message: TPL Suceava Stocuri Bancnote:Banca 436
+--------------------
