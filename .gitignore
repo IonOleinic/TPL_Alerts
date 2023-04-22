@@ -9,6 +9,7 @@ __pycache__/
 #logs
 geckodriver.log
 PyWhatKit.txt
+logs.txt
 
 # Distribution / packaging
 .Python

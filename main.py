@@ -1,7 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 import time
-import pywhatkit
 import os
 import openpyxl
 from statie import Statie
@@ -13,6 +12,7 @@ from pathlib import Path
 from selenium import webdriver
 import PyPDF2
 from whatsapp import send_whatsapp_msg
+import file_logger
 
 default_browser_exe='msedge.exe'
 downloads_path = str(Path.home() / "Downloads")
@@ -43,7 +43,7 @@ def check_ips():
          station=Statie(cell_denumire,cell_panou,cell_tvm,cell_camera,cell_switch)
          stations_list.append(station)
    for i in range(len(stations_list)):
-      stations_list[i].check_station(whatsapp_group_id)
+      stations_list[i].check_station()
    
 def check_alerts():
    def get_login_credentials():
@@ -83,17 +83,14 @@ def check_alerts():
          if(alert_list[i].ttl>0):
             result_list.append(alert_list[i])
          else:
-            print('\n\x1b[1;36;43m' + f'A expirat timpul pentru alerta {alert_list[i].nume} {alert_list[i].data}' + '\x1b[0m\n')
+            file_logger.log(f'A expirat timpul pentru alerta {alert_list[i].nume} {alert_list[i].data}')
       return result_list
    
    get_login_credentials()
-   # send_whatsapp_msg("+373 671 06 737","Hello\nworld")
-   # print('\x1b[1;31;40m' + 'Start' + '\x1b[0m')
    alert_list_already_send=[]
    rata_refresh=25
    wait_time=30*60
    default_alert_ttl=wait_time/rata_refresh
-   sended_messages=0
    while True:
       try:
          response = session.get('http://192.168.95.93/Skayo_CFM/AVM/Manage/AlertListView.aspx')
@@ -111,32 +108,24 @@ def check_alerts():
                alert_id=nume_TVM+data_alerta[0:10]
                if('Defect hardware' in tip_alerta):
                   alert_finded=True
-                  print('\x1b[1;31;40m' + 'Defect Hardware detectat!!!' + '\x1b[0m')
-                  print(nume_TVM)
-                  print(data_alerta,end='')
-                  print(tip_alerta)
+                  file_logger.log(f'\nDefect Hardware detectat!!!\n{nume_TVM}\n{data_alerta}{tip_alerta}',True)
                   if(check_if_alert_in(alert_id,alert_list_already_send)==False):
                      now=datetime.now()
-                     if(now.hour<5):
+                     if(now.hour<5 or now.hour>21):
                            alert_ttl=60*60/rata_refresh
                      else:
                         alert_ttl=default_alert_ttl
                      new_alert=Alerta(alert_id,nume_TVM,data_alerta,tip_alerta,alert_ttl)
-                     # pywhatkit.sendwhatmsg_to_group_instantly(whatsapp_group_id,f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}\n{tip_alerta}")
-                     send_whatsapp_msg("Echipa racheta",f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}\n{tip_alerta}")
-                     print(f"Trimis mesaj alerta de la {new_alert.nume} catre Whatsap\n")
+                     file_logger.log(f"\nTPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}\n{tip_alerta}")
+                     send_whatsapp_msg("Echipa racheta",f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}\n{tip_alerta}","alerta")
                      alert_list_already_send.append(new_alert)
-                     sended_messages+=1
                   else:
-                     print('\x1b[1;33;40m' + 'Mesaj deja trimis pe Whatsap' + '\x1b[0m\n')
+                     file_logger.log('Mesaj deja trimis pe Whatsap',True)
             if(alert_finded==False):
                print("Nimic gasit.")
-               if(sended_messages>2):
-                  sended_messages=0
-                  pkill(default_browser_exe)
             alert_list_already_send=delete_expired_alerts(alert_list_already_send)
          else:
-            print("Eroare logare.Se incearca din nou...")
+            file_logger.log("Eroare logare.Se incearca din nou...")
             get_login_credentials()
 
          for i in range(len(alert_list_already_send)):
@@ -146,8 +135,7 @@ def check_alerts():
          print('-------------------------------------')
          time.sleep(rata_refresh) 
       except Exception as e:
-        print("Failed with:", e.strerror) 
-        print("Error code:", e.code)
+        file_logger.log(e)
         get_login_credentials()
 
 def check_stocks():
@@ -158,55 +146,48 @@ def check_stocks():
           result+=list[i]+delimiter
       return result
 
-  def parse_pdf(pdf_name,sended_messages):
+  def parse_pdf(pdf_name):
      if(pdf_name==None):
-        print("[PARSE] File not exist or was removed.")
+        file_logger.log(f"[PARSE] File '{pdf_name}' not exist or was removed.")
         return
      else:
-      pdf_path=downloads_path+'/'+pdf_name
-      if os.path.exists(pdf_path):
-       with open(pdf_path, 'rb') as file:
-        pdf_reader = PyPDF2.PdfReader(file)
-        num_pages = len(pdf_reader.pages)
-        list_to_collect=[]
-        for i in range(num_pages):
-            page = pdf_reader.pages[i]
-            text = page.extract_text()
-            lines = text.splitlines()
-            for i in range(10,len(lines)):
-                line=lines[i].split(' ')
-                if(len(line)>30):
-                  nume_TVM=list_to_str(line[30:],' ')
-                  if("Stefan" in nume_TVM):
-                     nume_TVM="Colegiul Stefan cel Mare"
-                  nr_bancnote=int(line[11])
-                  if(nr_bancnote>399):
-                     stoc=Stoc(nume_TVM,nr_bancnote)
-                     list_to_collect.append(stoc)
-        
-        if(len(list_to_collect)==0):
-           print("Nu sunt TVM-uri de colectat.")
-           if(sended_messages>2):
-               sended_messages=0
-               pkill(default_browser_exe)
-        else:
-            now=datetime.now()
-            if(now.hour>5 and now.hour<22):    
-               whatsapp_text=""
-               for stoc in list_to_collect:
-                     whatsapp_text+=stoc.nume_TVM+" "+str(stoc.nr_bancnote)+"\n"
-               print("TVM-uri de colectat:")
-               print(whatsapp_text)
-               # pywhatkit.sendwhatmsg_to_group_instantly(whatsapp_group_id,f"TPL Suceava Stocuri Bancnote:\n{whatsapp_text}")
-               send_whatsapp_msg("Echipa racheta",f"TPL Suceava Stocuri Bancnote:\n{whatsapp_text}")
-               print(f"Trimis mesaj situatie stocuri catre Whatsap\n")
+         try:
+            pdf_path=downloads_path+'/'+pdf_name
+            if os.path.exists(pdf_path):
+               with open(pdf_path, 'rb') as file:
+                  pdf_reader = PyPDF2.PdfReader(file)
+                  num_pages = len(pdf_reader.pages)
+                  list_to_collect=[]
+                  for i in range(num_pages):
+                        page = pdf_reader.pages[i]
+                        text = page.extract_text()
+                        lines = text.splitlines()
+                        for i in range(10,len(lines)):
+                           line=lines[i].split(' ')
+                           if(len(line)>30):
+                              nume_TVM=list_to_str(line[30:],' ')
+                              if("Stefan" in nume_TVM):
+                                 nume_TVM="Colegiul Stefan cel Mare"
+                              nr_bancnote=int(line[11])
+                              if(nr_bancnote>399):
+                                 stoc=Stoc(nume_TVM,nr_bancnote)
+                                 list_to_collect.append(stoc)
+            
+                  if(len(list_to_collect)==0):
+                     file_logger.log("Nu sunt TVM-uri de colectat.")
+                  else:     
+                     whatsapp_text=""
+                     for stoc in list_to_collect:
+                           whatsapp_text+=stoc.nume_TVM+" "+str(stoc.nr_bancnote)+"\n"
+                     file_logger.log(f"\nTPL Suceava Stocuri Bancnote:\n{whatsapp_text}")
+                     send_whatsapp_msg("Echipa racheta",f"TPL Suceava Stocuri Bancnote:\n{whatsapp_text}","situatie stocuri")   
             else:
-               print(f"Este ora {now.hour}, e tarziu deja...Nu mai trimitem mesaj pe whatsapp...")
-      else:
-         print("PDF File Not Found.")
-
+               file_logger.log("PDF File Not Found.")
+         except Exception as e:
+            file_logger.log(e)
+  
   def download_pdf_stocuri():
-      def download():
+      def download_pdf():
          opts=webdriver.FirefoxOptions()
          opts.add_argument("--headless")
          opts.add_argument("--disable-gpu")
@@ -233,12 +214,12 @@ def check_stocks():
          time.sleep(10)
          driver.quit()
       try:
-         download()
+         download_pdf()
       except OSError as e:
-         print("Failed with:", e.strerror)
-         print("Error code:", e.code) 
+         file_logger.log(e)
          time.sleep(10)
-         download()
+         pkill('firefox.exe')
+         download_pdf()
 
   def find_pdf(partial_name):
      full_list = os.listdir(downloads_path)
@@ -256,38 +237,39 @@ def check_stocks():
 
   def delete_pdf(pdf_name):
    if(pdf_name==None):
-      print("File not exist or was removed.")
+      file_logger.log(f"[DELETE] File '{pdf_name}' not exist or was removed.")
       return
    pdf_path=downloads_path+'/'+pdf_name
    if os.path.exists(pdf_path):
       try:
         os.remove(pdf_path)
-        print("FILE '",pdf_name,"' was deleted")
+        file_logger.log(f"FILE '{pdf_name}' was deleted")
       except OSError as e: 
-        print("Failed with:", e.strerror) 
-        print("Error code:", e.code) 
+        file_logger.log(e)
    else:
-     print("[DELETE] The file does not exist")
+     file_logger.log(f"[DELETE] The file '{pdf_name}' does not exist")
   
   refresh_stocuri=3600
-  sended_messages=0
   while(True):
    try:
-      download_pdf_stocuri()  
-      time.sleep(1)
-      print()
-      pdf_name=find_pdf('Situatie stocuri curenta')
-      parse_pdf(pdf_name,sended_messages)
-      delete_pdf(pdf_name)
-      print()
-   except OSError as e:
-      print("Failed with:", e.strerror)
-      print("Error code:", e.code)
+      now=datetime.now()
+      if(now.hour>5 and now.hour<21):
+         download_pdf_stocuri()  
+         time.sleep(1)
+         print()
+         pdf_name=find_pdf('Situatie stocuri curenta')
+         parse_pdf(pdf_name)
+         delete_pdf(pdf_name)
+         print()
+   except Exception as e:
+      file_logger.log(e)
    time.sleep(refresh_stocuri)
    
 def main():
-   Thread(target=check_alerts).start()
+   file_logger.init_logs()
+   send_whatsapp_msg("+373 671 06 737","Start Script Alerte",'start script')
    Thread(target=check_stocks).start()
    Thread(target=check_ips).start()
+   Thread(target=check_alerts).start()
 
 main()    
