@@ -10,6 +10,9 @@ from threading import Thread
 from datetime import datetime
 from pathlib import Path
 from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 import PyPDF2
 from whatsapp import send_whatsapp_msg
 import file_logger
@@ -46,7 +49,7 @@ def check_ips():
       stations_list[i].check_station()
    
 def check_alerts():
-   def get_login_credentials():
+   def login_Skayo():
       res=session.get("http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx")
       soup=BeautifulSoup(res.content,'html.parser')
       ctl03_ctl00_TSM=soup.find('input',id="ctl03_ctl00_TSM").attrs["value"] 
@@ -86,13 +89,19 @@ def check_alerts():
             file_logger.log(f'A expirat timpul pentru alerta {alert_list[i].nume} {alert_list[i].data}')
       return result_list
    
-   get_login_credentials()
+   login_Skayo()
    alert_list_already_send=[]
    rata_refresh=25
+   rata_refresh_default=25
    wait_time=30*60
-   default_alert_ttl=wait_time/rata_refresh
    while True:
       try:
+         now=datetime.now()
+         if(now.hour>5 and now.hour<19):
+            rata_refresh=15
+         else:
+            rata_refresh=rata_refresh_default
+         default_alert_ttl=wait_time/rata_refresh
          response = session.get('http://192.168.95.93/Skayo_CFM/AVM/Manage/AlertListView.aspx')
          soup=BeautifulSoup(response.content,'html.parser')
          table_id='ctl00_cphContent_gridAlerts_ctl00'
@@ -108,9 +117,8 @@ def check_alerts():
                alert_id=nume_TVM+data_alerta[0:10]
                if('Defect hardware' in tip_alerta):
                   alert_finded=True
-                  file_logger.log(f'\nDefect Hardware detectat!!!\n{nume_TVM}\n{data_alerta}{tip_alerta}',True)
+                  print(f'\nDefect Hardware detectat!!!\n{nume_TVM}\n{data_alerta}{tip_alerta}')
                   if(check_if_alert_in(alert_id,alert_list_already_send)==False):
-                     now=datetime.now()
                      if(now.hour<5 or now.hour>21):
                            alert_ttl=60*60/rata_refresh
                      else:
@@ -120,13 +128,13 @@ def check_alerts():
                      send_whatsapp_msg("Echipa racheta",f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}\n{tip_alerta}","alerta")
                      alert_list_already_send.append(new_alert)
                   else:
-                     file_logger.log('Mesaj deja trimis pe Whatsap',True)
+                     print('Mesaj deja trimis pe Whatsap')
             if(alert_finded==False):
                print("Nimic gasit.")
             alert_list_already_send=delete_expired_alerts(alert_list_already_send)
          else:
             file_logger.log("Eroare logare.Se incearca din nou...")
-            get_login_credentials()
+            login_Skayo()
 
          for i in range(len(alert_list_already_send)):
             alert_list_already_send[i].ttl-=1
@@ -136,7 +144,7 @@ def check_alerts():
          time.sleep(rata_refresh) 
       except Exception as e:
         file_logger.log(e)
-        get_login_credentials()
+        login_Skayo()
 
 def check_stocks():
   
@@ -188,38 +196,44 @@ def check_stocks():
   
   def download_pdf_stocuri():
       def download_pdf():
-         opts=webdriver.FirefoxOptions()
-         opts.add_argument("--headless")
-         opts.add_argument("--disable-gpu")
-         driver = webdriver.Firefox(options=opts)
-         time.sleep(1)
-         driver.get("http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx")
-         username_field = driver.find_element('name','ctl03$txtUserName')
-         username_field.send_keys('admin')
-         time.sleep(1)
-         password_field = driver.find_element('name','ctl03$txtPassword')
-         password_field.send_keys('ticketing')
-         time.sleep(1)
-         login_form = driver.find_element('name','ctl03$tibAuthentication')
-         login_form.click()
-         time.sleep(1)
-         driver.get("http://192.168.95.93/Skayo_CFM/Reporting/Local/ReportCreator.aspx?RID=428")
-         time.sleep(2)
-         generate_btn = driver.find_element('id','ctl00_cphContent_tibGenerate')
-         generate_btn.click()
-         time.sleep(15)
-         driver.switch_to.frame("Situatie stocuri curenta")
-         btn_export_pdf = driver.find_element('id','btnExportPdf')
-         btn_export_pdf.click()
-         time.sleep(10)
-         driver.quit()
-      try:
-         download_pdf()
-      except OSError as e:
-         file_logger.log(e)
-         time.sleep(10)
-         pkill('firefox.exe')
-         download_pdf()
+         try:
+            opts=webdriver.FirefoxOptions()
+            opts.add_argument("--headless")
+            driver = webdriver.Firefox(options=opts)
+            time.sleep(1)
+            driver.get("http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx")
+            username_field = driver.find_element('name','ctl03$txtUserName')
+            username_field.send_keys('admin')
+            time.sleep(1)
+            password_field = driver.find_element('name','ctl03$txtPassword')
+            password_field.send_keys('ticketing')
+            time.sleep(1)
+            login_form = driver.find_element('name','ctl03$tibAuthentication')
+            login_form.click()
+            time.sleep(1)
+            driver.get("http://192.168.95.93/Skayo_CFM/Reporting/Local/ReportCreator.aspx?RID=428")
+            generate_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "ctl00_cphContent_tibGenerate"))
+            )
+            generate_btn.click()
+            time.sleep(15)
+            driver.switch_to.frame("Situatie stocuri curenta")
+            btn_export_pdf = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.ID, "btnExportPdf"))
+            )
+            btn_export_pdf.click()
+            time.sleep(10)
+            driver.quit()
+            return True
+         except Exception as e:
+            file_logger.log(e)
+            return False
+      
+      while(download_pdf()==False):
+         file_logger.log(f"Eroare descarcare pdf stocuri.Se incearca din nou dupa...5 sec")
+         #try to download after 5 sec
+         pkill("firefox.exe")
+         time.sleep(5)
 
   def find_pdf(partial_name):
      full_list = os.listdir(downloads_path)
@@ -256,7 +270,6 @@ def check_stocks():
       if(now.hour>5 and now.hour<21):
          download_pdf_stocuri()  
          time.sleep(1)
-         print()
          pdf_name=find_pdf('Situatie stocuri curenta')
          parse_pdf(pdf_name)
          delete_pdf(pdf_name)
