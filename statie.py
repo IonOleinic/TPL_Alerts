@@ -26,9 +26,9 @@ class Statie():
         
         
     def check_ip(self,ip,ip_source_text):
-        if(ip!='None'):
+        if(ip!=None and ip!='None' and ip!='' and ip[0].upper()!='X'):
             response = os.popen(f"ping -n 4 {ip}").read()
-            if "Received = 0" in response:
+            if ("Received = 0" in response) or ('unreachable' in response):
                 now=datetime.now()
                 if(now.hour>4 and now.hour<23):
                     data=now.strftime('%d.%m.%Y %H:%M:%S')

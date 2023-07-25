@@ -7,14 +7,15 @@ def init_logs():
       f.write("START\n")
       f.close()
    except Exception as e:
-      print(e)  
+      print(e)
+
 
 def log(message):
    try:
       print(message)
       f = open("logs.txt", "a")
-      now=datetime.now()
-      data=now.strftime('%d.%m.%Y %H:%M:%S')
+      now = datetime.now()
+      data = now.strftime('%d.%m.%Y %H:%M:%S')
       f.write(f"[{data}] :  {str(message)}\n")
       f.close()
    except Exception as e:
