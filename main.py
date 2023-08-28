@@ -16,19 +16,13 @@ from selenium.webdriver.common.by import By
 import PyPDF2
 from whatsapp import send_whatsapp_msg
 import file_logger
+import network
+import processes
 
 default_browser_exe = 'msedge.exe'
 downloads_path = str(Path.home() / "Downloads")
 whatsapp_group_id = 'HR4sPdnEGnI1vNGGehBmr4'
 session = requests.session()
-
-
-def pkill(process_name):
-    try:
-        killed = os.system('taskkill /f /im ' + process_name).read()
-    except Exception as e:
-        killed = 0
-    return killed
 
 
 def check_ips():
@@ -40,13 +34,13 @@ def check_ips():
     max_row = 58
     stations_list = []
     for i in range(2, max_row+1):
-        cell_denumire = sheet_obj.cell(i, 2).value
+        cell_nume_statie = sheet_obj.cell(i, 2).value
         cell_panou = sheet_obj.cell(i, 3).value
         cell_tvm = sheet_obj.cell(i, 4).value
         cell_camera = sheet_obj.cell(i, 5).value
         cell_switch = sheet_obj.cell(i, 6).value
-        if (cell_denumire != None):
-            station = Statie(cell_denumire, cell_panou,
+        if (cell_nume_statie != None):
+            station = Statie(cell_nume_statie, cell_panou,
                              cell_tvm, cell_camera, cell_switch)
             stations_list.append(station)
     for i in range(len(stations_list)):
@@ -55,37 +49,47 @@ def check_ips():
 
 def check_alerts():
     def login_Skayo():
-        res = session.get(
-            "http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx")
-        soup = BeautifulSoup(res.content, 'html.parser')
-        ctl03_ctl00_TSM = soup.find(
-            'input', id="ctl03_ctl00_TSM").attrs["value"]
-        __VIEWSTATE = soup.find('input', id="__VIEWSTATE").attrs["value"]
-        __VIEWSTATEGENERATOR = soup.find(
-            'input', id="__VIEWSTATEGENERATOR").attrs["value"]
-        __VIEWSTATEENCRYPTED = soup.find(
-            'input', id="__VIEWSTATEENCRYPTED").attrs["value"]
-        __EVENTVALIDATION = soup.find(
-            'input', id="__EVENTVALIDATION").attrs["value"]
-        ctl03_cboCompany_ClientState = soup.find(
-            'input', id="__EVENTVALIDATION").attrs["value"]
-        txtUserName = "admin"
-        txtPassword = 'ticketing'
-        tibAuthentication = "Autentificare"
-        payload = {
-            "ctl03_ctl00_TSM": ctl03_ctl00_TSM,
-            "__VIEWSTATE": __VIEWSTATE,
-            "__VIEWSTATEGENERATOR": __VIEWSTATEGENERATOR,
-            "__VIEWSTATEENCRYPTED": __VIEWSTATEENCRYPTED,
-            "__EVENTVALIDATION": __EVENTVALIDATION,
-            "ctl03_cboCompany_ClientState": ctl03_cboCompany_ClientState,
-            "ctl03$txtUserName": txtUserName,
-            "ctl03$txtPassword": txtPassword,
-            "ctl03$tibAuthentication": tibAuthentication
-        }
-        res = session.post(
-            "http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx", data=payload)
-
+        try:
+            if(network.check_local_network_conn()==False):
+                file_logger.log(f"(Login Skayo) Se asteapta conexiunea la retea...")
+                while(network.check_local_network_conn()==False):
+                    time.sleep(60)
+                file_logger.log(f"(Login Skayo) conexiunea la retea restabilita cu succes.")
+            res = session.get(
+                "http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx")
+            soup = BeautifulSoup(res.content, 'html.parser')
+            ctl03_ctl00_TSM = soup.find(
+                'input', id="ctl03_ctl00_TSM").attrs["value"]
+            __VIEWSTATE = soup.find('input', id="__VIEWSTATE").attrs["value"]
+            __VIEWSTATEGENERATOR = soup.find(
+                'input', id="__VIEWSTATEGENERATOR").attrs["value"]
+            __VIEWSTATEENCRYPTED = soup.find(
+                'input', id="__VIEWSTATEENCRYPTED").attrs["value"]
+            __EVENTVALIDATION = soup.find(
+                'input', id="__EVENTVALIDATION").attrs["value"]
+            ctl03_cboCompany_ClientState = soup.find(
+                'input', id="__EVENTVALIDATION").attrs["value"]
+            txt_username = "admin"
+            txt_password = "ticketing"
+            tib_authentication = "Autentificare"
+            payload = {
+                "ctl03_ctl00_TSM": ctl03_ctl00_TSM,
+                "__VIEWSTATE": __VIEWSTATE,
+                "__VIEWSTATEGENERATOR": __VIEWSTATEGENERATOR,
+                "__VIEWSTATEENCRYPTED": __VIEWSTATEENCRYPTED,
+                "__EVENTVALIDATION": __EVENTVALIDATION,
+                "ctl03_cboCompany_ClientState": ctl03_cboCompany_ClientState,
+                "ctl03$txtUserName": txt_username,
+                "ctl03$txtPassword": txt_password,
+                "ctl03$tibAuthentication": tib_authentication
+            }
+            res = session.post(
+                "http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx", data=payload)
+            return True
+        except Exception as e:
+            file_logger.log(e)
+            return False
+ 
     def check_if_alert_in(alert_id, alert_list):
         for i in range(len(alert_list)):
             if (alert_id == alert_list[i].id):
@@ -110,7 +114,7 @@ def check_alerts():
     while True:
         try:
             now = datetime.now()
-            if (now.hour > 5 and now.hour < 19):
+            if (now.hour >= 6 and now.hour <= 18):
                 rata_refresh = 10
             else:
                 rata_refresh = rata_refresh_default
@@ -126,13 +130,22 @@ def check_alerts():
                     row_tag = table_tag.find('tr', id=(table_id+"__"+str(i)))
                     td_list = row_tag.find_all('td', class_='col-lg-1')
                     tip_alerta = row_tag.find('td', class_='col-lg-3').text
+                    tip_eroare = row_tag.find('td', class_='rowspan col-lg-7').text
                     nume_TVM = td_list[0].text
                     data_alerta = td_list[1].text
                     alert_id = nume_TVM+data_alerta[0:10]
                     if ('Defect hardware' in tip_alerta):
                         alert_finded = True
+                        if("BNR" in tip_eroare.upper()):
+                            tip_eroare="Eroare BNR"
+                        elif("POS" in tip_eroare.upper()):
+                            tip_eroare="Eroare POS"
+                        elif("CARDDISPENSER" in tip_eroare.upper()):
+                            tip_eroare="Eroare imprimanta carduri"
+                        else:
+                            tip_eroare="Eroare generala"
                         print(
-                            f'\nDefect Hardware detectat!!!\n{nume_TVM}\n{data_alerta}{tip_alerta}')
+                            f'\nDefect Hardware detectat!!!\n{nume_TVM}\n{data_alerta}{tip_eroare}\n{tip_alerta}')
                         if (check_if_alert_in(alert_id, alert_list_already_send) == False):
                             if (now.hour < 5 or now.hour > 21):
                                 alert_ttl = 60*60/rata_refresh
@@ -141,9 +154,9 @@ def check_alerts():
                             new_alert = Alerta(
                                 alert_id, nume_TVM, data_alerta, tip_alerta, alert_ttl)
                             file_logger.log(
-                                f"\nTPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}\n{tip_alerta}")
+                                f"\nTPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}{tip_alerta}\n{tip_eroare}")
                             send_whatsapp_msg(
-                                "Echipa racheta", f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}\n{tip_alerta}", "alerta")
+                                "Echipa racheta", f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}{tip_alerta}\n{tip_eroare}", "alerta")
                             alert_list_already_send.append(new_alert)
                         else:
                             print('Mesaj deja trimis pe Whatsap')
@@ -258,12 +271,11 @@ def check_stocks():
             except Exception as e:
                 file_logger.log(e)
                 return False
-
         while (download_pdf() == False):
             file_logger.log(
                 f"Eroare descarcare pdf stocuri.Se incearca din nou dupa...5 sec")
             # try to download after 5 sec
-            pkill("firefox.exe")
+            processes.pkill("firefox.exe")
             time.sleep(5)
 
     def find_pdf(partial_name):
@@ -298,8 +310,13 @@ def check_stocks():
     refresh_stocuri = 3600
     while (True):
         try:
+            if(network.check_local_network_conn()==False):
+                file_logger.log(f"(Verificare Stocuri) Se asteapta conexiunea la retea...")
+                while(network.check_local_network_conn()==False):
+                    time.sleep(60)
+                file_logger.log(f"(Verificare Stocuri) conexiunea la retea restabilita cu succes.")
             now = datetime.now()
-            if (now.hour > 5 and now.hour < 21):
+            if (now.hour >= 6 and now.hour <= 20):
                 download_pdf_stocuri()
                 time.sleep(1)
                 pdf_name = find_pdf('Situatie stocuri curenta')

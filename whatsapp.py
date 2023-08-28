@@ -4,45 +4,25 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 import time
-import os
 from threading import Thread
-import psutil
 import random
 import file_logger
-
-
-def pkill(process_name):
-   try:
-      killed = os.system('taskkill /f /im ' + process_name).read()
-   except Exception:
-      killed = 0
-   return killed
-
-
-def checkIfProcessRunning(processName):
-   for proc in psutil.process_iter():
-      try:
-         # Check if process name contains the given name string.
-         if processName.lower() in proc.name().lower():
-               return True
-      except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-         pass
-   return False
-
+import processes
+import network
 
 def send_msg(chat_name, message, message_type):
 
    def send():
       try:
          wait_time = 0
-         while (checkIfProcessRunning('msedge.exe') == True):
+         while (processes.checkIfProcessRunning('msedge.exe') == True):
                wait = 5+random.randint(0, 10)
                file_logger.log(
                   f"Se asteapta finisarea trimiterii unui mesaj mai vechi...({wait} sec)")
                time.sleep(wait)  # wait for finishing prev process
                wait_time += wait
                if (wait_time > 200):
-                  pkill('msedge.exe')
+                  processes.pkill('msedge.exe')
                   wait_time = 0
          file_logger.log(
                f"Se trimite mesaj {message_type} catre Whatsap...")
@@ -82,11 +62,13 @@ def send_msg(chat_name, message, message_type):
       file_logger.log(
          f"Eroare trimitere mesaj Whatsapp.Se incearca din nou dupa...5 sec")
       # try to resend after 5 sec
-      pkill("msedge.exe")
+      processes.pkill("msedge.exe")
       time.sleep(5)
 
 
 def send_whatsapp_msg(chat_name, message, message_type):
-
-   time.sleep(3)
-   Thread(target=send_msg, args=(chat_name, message, message_type)).start()
+   if(network.check_internet_conn()==True):
+      time.sleep(3)
+      Thread(target=send_msg, args=(chat_name, message, message_type)).start()
+   else:
+       file_logger.log(f"Nu exista conexiune la internet. Mesajul {message_type} nu va fi trimis pe whatsapp.")
