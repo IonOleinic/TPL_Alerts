@@ -142,10 +142,14 @@ def check_alerts():
                             tip_eroare="Eroare POS"
                         elif("CARDDISPENSER" in tip_eroare.upper()):
                             tip_eroare="Eroare imprimanta carduri"
+                        elif("RECEIPTPRINTER" in tip_eroare.upper()):
+                            tip_eroare="Eroare imprimanta chitante"
+                        elif("QR" in tip_eroare.upper()):
+                            tip_eroare="Eroare imprimanta bilete"
                         else:
                             tip_eroare="Eroare generala"
                         print(
-                            f'\nDefect Hardware detectat!!!\n{nume_TVM}\n{data_alerta}{tip_eroare}\n{tip_alerta}')
+                            f'\nDefect Hardware detectat!!!\n{nume_TVM}\n{data_alerta}\n{tip_eroare}\n{tip_alerta}')
                         if (check_if_alert_in(alert_id, alert_list_already_send) == False):
                             if (now.hour < 5 or now.hour > 21):
                                 alert_ttl = 60*60/rata_refresh
@@ -154,9 +158,9 @@ def check_alerts():
                             new_alert = Alerta(
                                 alert_id, nume_TVM, data_alerta, tip_alerta, alert_ttl)
                             file_logger.log(
-                                f"\nTPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}{tip_alerta}\n{tip_eroare}")
+                                f"\nTPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}{tip_alerta}{tip_eroare}")
                             send_whatsapp_msg(
-                                "Echipa racheta", f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}{tip_alerta}\n{tip_eroare}", "alerta")
+                                "Echipa racheta", f"TPL Suceava Skayo TVM Alert\n{nume_TVM}\n{data_alerta}{tip_alerta}{tip_eroare}", "alerta")
                             alert_list_already_send.append(new_alert)
                         else:
                             print('Mesaj deja trimis pe Whatsap')
