@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import time
+import pytz
 import os
 import openpyxl
 from statie import Statie
@@ -22,7 +23,7 @@ import processes
 default_browser_exe = 'msedge.exe'
 downloads_path = str(Path.home() / "Downloads")
 whatsapp_group_id = 'HR4sPdnEGnI1vNGGehBmr4'
-session = requests.session()
+
 
 
 def check_ips():
@@ -48,6 +49,12 @@ def check_ips():
 
 
 def check_alerts():
+    skayo_session = requests.session()
+    alert_list_already_send = []
+    refresh_alerte = 25
+    refresh_alerte_default = 25
+    wait_time = 30*60
+
     def login_Skayo():
         try:
             if(network.check_local_network_conn()==False):
@@ -55,7 +62,7 @@ def check_alerts():
                 while(network.check_local_network_conn()==False):
                     time.sleep(60)
                 file_logger.log(f"(Login Skayo) conexiunea la retea restabilita cu succes.")
-            res = session.get(
+            res = skayo_session.get(
                 "http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx")
             soup = BeautifulSoup(res.content, 'html.parser')
             ctl03_ctl00_TSM = soup.find(
@@ -83,7 +90,7 @@ def check_alerts():
                 "ctl03$txtPassword": txt_password,
                 "ctl03$tibAuthentication": tib_authentication
             }
-            res = session.post(
+            res = skayo_session.post(
                 "http://192.168.95.93/Skayo_CFM/Authentication.aspx?ReturnUrl=/Skayo_CFM/Default.aspx", data=payload)
             return True
         except Exception as e:
@@ -107,19 +114,16 @@ def check_alerts():
         return result_list
 
     login_Skayo()
-    alert_list_already_send = []
-    rata_refresh = 25
-    rata_refresh_default = 25
-    wait_time = 30*60
+    
     while True:
         try:
             now = datetime.now()
             if (now.hour >= 6 and now.hour <= 18):
-                rata_refresh = 10
+                refresh_alerte = 10
             else:
-                rata_refresh = rata_refresh_default
-            default_alert_ttl = wait_time/rata_refresh
-            response = session.get(
+                refresh_alerte = refresh_alerte_default
+            default_alert_ttl = wait_time/refresh_alerte
+            response = skayo_session.get(
                 'http://192.168.95.93/Skayo_CFM/AVM/Manage/AlertListView.aspx')
             soup = BeautifulSoup(response.content, 'html.parser')
             table_id = 'ctl00_cphContent_gridAlerts_ctl00'
@@ -152,7 +156,7 @@ def check_alerts():
                             f'\nDefect Hardware detectat!!!\n{nume_TVM}\n{data_alerta}\n{tip_eroare}\n{tip_alerta}')
                         if (check_if_alert_in(alert_id, alert_list_already_send) == False):
                             if (now.hour < 5 or now.hour > 21):
-                                alert_ttl = 60*60/rata_refresh
+                                alert_ttl = 60*60/refresh_alerte
                             else:
                                 alert_ttl = default_alert_ttl
                             new_alert = Alerta(
@@ -169,15 +173,15 @@ def check_alerts():
                 alert_list_already_send = delete_expired_alerts(
                     alert_list_already_send)
             else:
-                file_logger.log("Eroare logare.Se incearca din nou...")
+                file_logger.log("Eroare logare Skayo. Se incearca din nou...")
                 login_Skayo()
 
             for i in range(len(alert_list_already_send)):
                 alert_list_already_send[i].ttl -= 1
 
-            print(f"Refresh dupa {rata_refresh} sec...")
+            print(f"Refresh dupa {refresh_alerte} sec...")
             print('-------------------------------------')
-            time.sleep(rata_refresh)
+            time.sleep(refresh_alerte)
         except Exception as e:
             file_logger.log(e)
             login_Skayo()
@@ -263,13 +267,13 @@ def check_stocks():
                         (By.ID, "ctl00_cphContent_tibGenerate"))
                 )
                 generate_btn.click()
-                time.sleep(15)
+                time.sleep(10)
                 driver.switch_to.frame("Situatie stocuri curenta")
-                btn_export_pdf = WebDriverWait(driver, 5).until(
+                btn_export_pdf = WebDriverWait(driver, 35).until(
                     EC.element_to_be_clickable((By.ID, "btnExportPdf"))
                 )
                 btn_export_pdf.click()
-                time.sleep(10)
+                time.sleep(25)  # a suficient time for downloading pdf
                 driver.quit()
                 return True
             except Exception as e:
@@ -324,6 +328,7 @@ def check_stocks():
                 download_pdf_stocuri()
                 time.sleep(1)
                 pdf_name = find_pdf('Situatie stocuri curenta')
+                time.sleep(1)
                 parse_pdf(pdf_name)
                 delete_pdf(pdf_name)
                 print()
@@ -332,12 +337,81 @@ def check_stocks():
         time.sleep(refresh_stocuri)
 
 
+def check_mobile_messages():
+    tpl_mobile_session = requests.session()
+    def login_tpl_mobile():
+        try:
+            if (network.check_internet_conn() == False):
+                print(f"(Login TPL Mobile) Se asteapta conexiunea la retea...")
+                while (network.check_internet_conn() == False):
+                    time.sleep(60)
+                print(f"(Login TPL Mobile) conexiunea la retea restabilita cu succes.")
+            payload = {"username": "ion.oleinic21@gmail.com",
+                    "password": "Mazzeratti123"}
+            jwt_token = None
+            response = tpl_mobile_session.post(
+                "https://mobile.tplsv.ro:9090/api/authenticate", json=payload)
+            json_data = response.json()
+            jwt_token = json_data.get('id_token', None)
+            return jwt_token
+        except Exception as e:
+            print(e)
+            return None
+    
+    def get_messages_tpl_mobile(jwt_token):
+        headers = {
+            'Authorization': f'Bearer {jwt_token}'
+        }
+        response = tpl_mobile_session.get(
+            "https://mobile.tplsv.ro:9090/api/user-message-threads?page=0&size=20&type=0&email=&subject=&sort=createdDate,desc&sort=id", headers=headers)
+        response.raise_for_status()
+        messages = response.json()
+        return messages
+
+    jwt_token=login_tpl_mobile()
+    refresh_mobile_msgs=1200
+    messages_already_sent=[]
+    while(True):
+        try:
+            now = datetime.now()
+            if (now.hour >= 6 and now.hour <= 20):
+                messages=get_messages_tpl_mobile(jwt_token)
+                for message in messages:
+                    if ((message['isSeen'] == False) and (message['id'] not in messages_already_sent)):
+                        # message should be send on whatsapp
+                        userEmail = message['userEmail']
+                        datetime_object_utc = datetime.strptime( message['createdDate'], '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=pytz.UTC)
+                        datetime_object_adjusted = datetime_object_utc.astimezone(pytz.timezone('Europe/Bucharest'))
+                        createdDate = datetime_object_adjusted.strftime("%d.%m.%Y %H:%M")
+                        subject = message['subject']
+                        message_text = message['userMessages'][0]['text'].replace(
+                            '\n', ' ')
+                        message_to_send = f'TPL Mobile Message\nEmail: {userEmail}\nData: {createdDate}\nSubiect: {subject}\nMesaj: {message_text}'
+                        file_logger.log(f'\n{message_to_send}')
+                        send_whatsapp_msg(["+373 671 06 737","Simona"],message_to_send,'reclamatie mobile')
+                        messages_already_sent.append(message['id'])
+            time.sleep(refresh_mobile_msgs)
+
+        except requests.exceptions.HTTPError as err:
+            if err.response.status_code == 401:
+                file_logger.log('Eroare logare TPL Mobile. Se incearca din nou...') 
+                jwt_token=login_tpl_mobile()
+            else:
+                file_logger.log(err) 
+        except Exception as err:
+            file_logger.log("TPL Mobile Thread CRASHED.")
+            file_logger.log(err)
+            raise Exception("TPL Mobile Thread CRASHED.") #STOP
+            
+        
+
 def main():
     file_logger.init_logs()
     # send_whatsapp_msg("+373 671 06 737", "Start Script Alerte", 'start script')
     Thread(target=check_stocks).start()
     Thread(target=check_ips).start()
     Thread(target=check_alerts).start()
+    Thread(target=check_mobile_messages()).start()
 
 
 main()

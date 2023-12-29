@@ -1,7 +1,7 @@
 import psutil
 import os
 
-def checkIfProcessRunning(process_name):
+def check_if_process_run(process_name):
    for proc in psutil.process_iter():
       try:
          # Check if process name contains the given name string.
@@ -13,7 +13,7 @@ def checkIfProcessRunning(process_name):
 
 def pkill(process_name):
     try:
-        if(checkIfProcessRunning(process_name)==True):
+        if(check_if_process_run(process_name)==True):
             killed = os.system('taskkill /f /im ' + process_name).read()
     except Exception as e:
         killed = 0
