@@ -401,10 +401,10 @@ def check_mobile_messages():
         except Exception as err:
             file_logger.log("TPL Mobile Thread CRASHED.")
             file_logger.log(err)
+            send_whatsapp_msg("+373 671 06 737","TPL Mobile Thread CRASHED.",'reclamatie mobile')
             raise Exception("TPL Mobile Thread CRASHED.") #STOP
             
         
-
 def main():
     file_logger.init_logs()
     # send_whatsapp_msg("+373 671 06 737", "Start Script Alerte", 'start script')

@@ -37,7 +37,7 @@ class Statie():
                     file_logger.log(f"IP-ul {ip} ({tip_echipament} {self.nume_statie}) nu a raspuns la ping timp de {total_exceed_min} min.")
                     now=datetime.now()
                     sleep_time=wait_time-total_exceed_sec
-                    if(now.hour>=5 and now.hour<=22):
+                    if(now.hour>=5 and now.hour<=21):
                         data=now.strftime('%d.%m.%Y %H:%M:%S')
                         message=f"Lipsa conexiune {tip_echipament} {self.nume_statie}\n{data}"
                         file_logger.log("\n"+message)
