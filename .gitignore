@@ -8,7 +8,6 @@ __pycache__/
 *.so
 
 #logs
-geckodriver.log
 PyWhatKit.txt
 logs.txt
 *.log
